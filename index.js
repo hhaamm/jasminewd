@@ -103,20 +103,15 @@ function wrapInControlFlow(globalFn, fnName) {
             }, desc_).then(function(retValue) {
               return retValue;
             }, function(e) {
-              // WIP: Add the error to tentative failure stack as if it where a failed expect()
-              // var expectationResult = new jasmine.ExpectationResult({
-              //   // matcherName: matcherName,
-              //   passed: false,
-              //   // expected: 'xxx',
-              //   // actual: 'yyy',
-              //   message: e ? jasmine.util.formatException(e) : 'Exception',
-              //   trace: { stack: e.stack }
-              // });
-              // jasmine.getEnv().currentSpec.addMatcherResult(expectationResult);
-              // Avoid propagation of the webdriver error and simply retry
+              var expectationResult = new jasmine.ExpectationResult({
+                passed: false,
+                message: 'Webdriver wait failure: ' + e.stack.split(":")[0],
+                trace: e
+              });
+              jasmine.getEnv().currentSpec.addMatcherResult(expectationResult);
               return false;
             });
-          }, 6000, 'At ' + fnName + '() block').then(function() {
+          }, 9000, 'At ' + fnName + '() block').then(function() {
             asyncFnDone.fulfill();
           }, function(err) {
             asyncFnDone.reject(err);
@@ -137,9 +132,16 @@ function wrapInControlFlow(globalFn, fnName) {
         webdriver.promise.all([asyncFnDone, flowFinished]).then(function() {
           seal(done)();
         }, function(e) {
-          e.stack = e.stack + '==== async task ====\n' + driverError.stack;
-          done(e);
-          // NEW: fail-fast here
+          if (fnName === 'rit' || fnName === 'rrit') {
+            // No need to pollute the error results with the retry
+            // TODO: Remove repeated failures
+            done();
+          } else {
+            // Default it/iit behaviour
+            e.stack = e.stack + '==== async task ====\n' + driverError.stack;
+            done(e);
+          }
+          // NEW: fail-fast logic here
           jasmine.getEnv().specFilter = function(spec) {
               return false;
           };
@@ -198,9 +200,8 @@ function wrapMatcher(matcher, actualPromise, not) {
     var originalArgs = arguments;
     var matchError = new Error("Failed expectation");
     matchError.stack = matchError.stack.replace(/ +at.+jasminewd.+\n/, '');
+    var expected = originalArgs[0];
     actualPromise.then(function(actual) {
-      var expected = originalArgs[0];
-
       var expectation = expect(actual);
       if (not) {
         expectation = expectation.not;
@@ -229,6 +230,15 @@ function wrapMatcher(matcher, actualPromise, not) {
         expectation[matcher].apply(expectation, originalArgs);
         expectation.spec.addMatcherResult = originalAddMatcherResult;
       }
+    }, function(e) {
+      // jasmine.getEnv().currentSpec.currentExpect = expectationResult;
+      var expectationResult = new jasmine.ExpectationResult({
+        passed: false,
+        expected: expected,
+        message: 'Webdriver failure: ' + e.stack.split(":")[0],
+        trace: matchError
+      });
+      jasmine.getEnv().currentSpec.addMatcherResult(expectationResult);
     });
   };
 }
