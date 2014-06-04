@@ -84,27 +84,65 @@ function wrapInControlFlow(globalFn, fnName) {
         var asyncFnDone = webdriver.promise.defer();
 
         if (fn.length === 0) {
-          // function with globalFn not asychronous
-          asyncFnDone.fulfill();
+          if (fnName !== 'rit' && fnName !== 'rrit') {
+            // function with globalFn not asychronous
+            asyncFnDone.fulfill();
+          }
         } else if (fn.length > 1) {
           throw Error('Invalid # arguments (' + fn.length + ') within function "' + fnName +'"');
         }
 
-        var flowFinished = flow.execute(function() {
-          fn.call(jasmine.getEnv().currentSpec, function(userError) {
-            if (userError) {
-              asyncFnDone.reject(new Error(userError));
-            } else {
-              asyncFnDone.fulfill();
-            }
+        if (fnName === 'rit' || fnName === 'rrit') {
+          // With retry
+          // TODO: Silence expect() errors or remove repeated ones
+          flowFinished = flow.wait(function() {
+            return flow.execute(function() {
+              return fn.call(jasmine.getEnv().currentSpec, function(userError) {
+                return !userError;
+              });
+            }, desc_).then(function(retValue) {
+              return retValue;
+            }, function(e) {
+              // WIP: Add the error to tentative failure stack as if it where a failed expect()
+              // var expectationResult = new jasmine.ExpectationResult({
+              //   // matcherName: matcherName,
+              //   passed: false,
+              //   // expected: 'xxx',
+              //   // actual: 'yyy',
+              //   message: e ? jasmine.util.formatException(e) : 'Exception',
+              //   trace: { stack: e.stack }
+              // });
+              // jasmine.getEnv().currentSpec.addMatcherResult(expectationResult);
+              // Avoid propagation of the webdriver error and simply retry
+              return false;
+            });
+          }, 6000, 'At ' + fnName + '() block').then(function() {
+            asyncFnDone.fulfill();
+          }, function(err) {
+            asyncFnDone.reject(err);
           });
-        }, desc_);
+        } else {
+          // Without retry
+          flowFinished = flow.execute(function() {
+            fn.call(jasmine.getEnv().currentSpec, function(userError) {
+              if (userError) {
+                asyncFnDone.reject(new Error(userError));
+              } else {
+                asyncFnDone.fulfill();
+              }
+            });
+          }, desc_);
+        }
 
         webdriver.promise.all([asyncFnDone, flowFinished]).then(function() {
           seal(done)();
         }, function(e) {
           e.stack = e.stack + '==== async task ====\n' + driverError.stack;
           done(e);
+          // NEW: fail-fast here
+          jasmine.getEnv().specFilter = function(spec) {
+              return false;
+          };
         });
       };
     }
@@ -113,6 +151,8 @@ function wrapInControlFlow(globalFn, fnName) {
     switch (fnName) {
       case 'it':
       case 'iit':
+      case 'rit':
+      case 'rrit':
         description = validateString(arguments[0]);
         func = validateFunction(arguments[1]);
         if (!arguments[2]) {
@@ -140,6 +180,8 @@ function wrapInControlFlow(globalFn, fnName) {
 
 global.it = wrapInControlFlow(global.it, 'it');
 global.iit = wrapInControlFlow(global.iit, 'iit');
+global.rit = wrapInControlFlow(global.it, 'rit');
+global.rrit = wrapInControlFlow(global.iit, 'rrit');
 global.beforeEach = wrapInControlFlow(global.beforeEach, 'beforeEach');
 global.afterEach = wrapInControlFlow(global.afterEach, 'afterEach');
 
