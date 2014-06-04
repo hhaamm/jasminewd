@@ -95,7 +95,9 @@ function wrapInControlFlow(globalFn, fnName) {
         if (fnName === 'rit' || fnName === 'rrit') {
           // With retry
           // TODO: Silence expect() errors or remove repeated ones
+          jasmine.getEnv().currentSpec.currentWaitIteration = 0;
           flowFinished = flow.wait(function() {
+            jasmine.getEnv().currentSpec.currentWaitIteration++;
             return flow.execute(function() {
               return fn.call(jasmine.getEnv().currentSpec, function(userError) {
                 return !userError;
@@ -108,7 +110,11 @@ function wrapInControlFlow(globalFn, fnName) {
                 message: 'Webdriver wait failure: ' + e.stack.split(":")[0],
                 trace: e
               });
-              jasmine.getEnv().currentSpec.addMatcherResult(expectationResult);
+              // Only add one error once, i.e. the first time
+              var currentWaitIteration = jasmine.getEnv().currentSpec.currentWaitIteration;
+              if (currentWaitIteration == null || currentWaitIteration === 1) {
+                jasmine.getEnv().currentSpec.addMatcherResult(expectationResult);
+              }
               return false;
             });
           }, 9000, 'At ' + fnName + '() block').then(function() {
@@ -210,7 +216,10 @@ function wrapMatcher(matcher, actualPromise, not) {
       var error = matchError;
       expectation.spec.addMatcherResult = function(result) {
         result.trace = error;
-        jasmine.Spec.prototype.addMatcherResult.call(this, result);
+        var currentWaitIteration = jasmine.getEnv().currentSpec.currentWaitIteration;
+        if (currentWaitIteration == null || currentWaitIteration === 1) {
+          jasmine.Spec.prototype.addMatcherResult.call(this, result);
+        }
       };
 
       if (expected instanceof webdriver.promise.Promise) {
@@ -225,20 +234,27 @@ function wrapMatcher(matcher, actualPromise, not) {
       } else {
         expectation.spec.addMatcherResult = function(result) {
           result.trace = error;
-          originalAddMatcherResult.call(this, result);
+          var currentWaitIteration = jasmine.getEnv().currentSpec.currentWaitIteration;
+          if (currentWaitIteration == null || currentWaitIteration === 1) {
+            originalAddMatcherResult.call(this, result);
+          }
         };
         expectation[matcher].apply(expectation, originalArgs);
         expectation.spec.addMatcherResult = originalAddMatcherResult;
       }
     }, function(e) {
-      // jasmine.getEnv().currentSpec.currentExpect = expectationResult;
+      // Catch webdriver errors and turn them into expectation errors
       var expectationResult = new jasmine.ExpectationResult({
         passed: false,
         expected: expected,
         message: 'Webdriver failure: ' + e.stack.split(":")[0],
         trace: matchError
       });
-      jasmine.getEnv().currentSpec.addMatcherResult(expectationResult);
+      // Retry: only add each addMatcherResult failure once, i.e. the first time
+      var currentWaitIteration = jasmine.getEnv().currentSpec.currentWaitIteration;
+      if (currentWaitIteration == null || currentWaitIteration === 1) {
+        jasmine.getEnv().currentSpec.addMatcherResult(expectationResult);
+      }
     });
   };
 }
