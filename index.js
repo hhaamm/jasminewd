@@ -222,10 +222,13 @@ function wrapInControlFlow(globalFn, fnName) {
   };
 }
 
+global.rit = global.it;
+global.rrit = global.iit;
+
 global.it = wrapInControlFlow(global.it, 'it');
 global.iit = wrapInControlFlow(global.iit, 'iit');
-global.rit = wrapInControlFlow(global.it, 'rit');
-global.rrit = wrapInControlFlow(global.iit, 'rrit');
+global.rit = wrapInControlFlow(global.rit, 'rit');
+global.rrit = wrapInControlFlow(global.rrit, 'rrit');
 global.beforeEach = wrapInControlFlow(global.beforeEach, 'beforeEach');
 global.afterEach = wrapInControlFlow(global.afterEach, 'afterEach');
 
