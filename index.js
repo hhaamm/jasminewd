@@ -390,7 +390,7 @@ function retryMatchers(actualValue) {
   }
 
   return rMatchers;
-};
+}
 
 var originalExpect = global.expect;
 

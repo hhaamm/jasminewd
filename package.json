@@ -22,7 +22,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "pretest": "node_modules/.bin/jshint index.js spec",
+    "pretest": "node_modules/.bin/jshint index.js spec --config jshint-config.json",
     "test": "node node_modules/.bin/minijasminenode spec/adapterSpec.js"
   },
   "license": "MIT",
