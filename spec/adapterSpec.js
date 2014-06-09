@@ -217,4 +217,18 @@ describe('webdriverJS Jasmine adapter', function() {
       }, 500);
     });
   });
+
+  describe('should support retry method rit()', function() {
+      var count = 0;
+
+      rit('should retry until counter reaches 3', function() {
+          count++;
+          console.log(' <<< Current count: ' + count + ' >>> ');
+          expect(count).toBe(3);
+      });
+
+      it('should have updated count to 3 after previous rit()', function() {
+          expect(count).toBe(3);
+      });
+  });
 });
