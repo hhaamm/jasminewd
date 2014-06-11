@@ -167,10 +167,6 @@ function wrapInControlFlow(globalFn, fnName) {
         webdriver.promise.all([asyncFnDone, flowFinished]).then(function() {
           seal(done)();
         }, function(e) {
-          // NEW: fail-fast logic here
-          jasmine.getEnv().specFilter = function(spec) {
-              return false;
-          };
           if (fnName === 'rit' || fnName === 'rrit') {
             // Report only the last retry collected errors
             var tempMatcherResults = jasmine.getEnv().currentSpec.tempMatcherResults;
