@@ -393,7 +393,9 @@ var originalExpect = global.expect;
 global.expect = function(actual) {
   // Take additional screen shots here if the function is available
   if (jasmine.getEnv().additionalScreenShots) {
-    jasmine.getEnv().additionalScreenShots(null, null, 'expect');
+    var matchTrace = new Error("Expectation");
+    var traceStr = matchTrace.stack.replace(/ +at.+jasminewd.+\n/, '');
+    jasmine.getEnv().additionalScreenShots(traceStr, null, null, 'expect');
   }
 
   if (actual instanceof webdriver.promise.Promise) {
