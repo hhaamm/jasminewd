@@ -406,8 +406,8 @@ global.expect = function(actual) {
   if (jasmine.getEnv().additionalScreenShots) {
     var matchTrace = new Error("Expectation");
     var traceStr = matchTrace.stack.
-                      replace(/ +at.+jasminewd.+\n/, '').
-                      replace(/ +at.+selenium-webdriver.+\n/, '');
+                      replace(/ +at.+jasminewd.+\n/g, '').
+                      replace(/ +at.+selenium-webdriver.+\n/g, '');
     jasmine.getEnv().additionalScreenShots(traceStr, null, null, 'expect');
   }
 
