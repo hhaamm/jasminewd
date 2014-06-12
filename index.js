@@ -391,6 +391,11 @@ function retryMatchers(actualValue) {
 var originalExpect = global.expect;
 
 global.expect = function(actual) {
+  // Take additional screen shots here if the function is available
+  if (jasmine.getEnv().additionalScreenShots) {
+    jasmine.getEnv().additionalScreenShots(null, null, 'expect');
+  }
+
   if (actual instanceof webdriver.promise.Promise) {
     if (actual instanceof webdriver.WebElement) {
       throw 'expect called with WebElement argument, expected a Promise. ' +
