@@ -391,22 +391,27 @@ function retryMatchers(actualValue) {
 var originalExpect = global.expect;
 
 global.expect = function(actual) {
-  // Take additional screen shots here if the function is available
-  if (jasmine.getEnv().additionalScreenShots) {
-    var matchTrace = new Error("Expectation");
-    var traceStr = matchTrace.stack.replace(/ +at.+jasminewd.+\n/, '');
-    jasmine.getEnv().additionalScreenShots(traceStr, null, null, 'expect');
-  }
-
+  var retMatchers;
   if (actual instanceof webdriver.promise.Promise) {
     if (actual instanceof webdriver.WebElement) {
       throw 'expect called with WebElement argument, expected a Promise. ' +
           'Did you mean to use .getText()?';
     }
-    return promiseMatchers(actual);
+    retMatchers = promiseMatchers(actual);
   } else {
-    return retryMatchers(actual);
+    retMatchers = retryMatchers(actual);
   }
+
+  // Take additional screen shots here if the function is available
+  if (jasmine.getEnv().additionalScreenShots) {
+    var matchTrace = new Error("Expectation");
+    var traceStr = matchTrace.stack.
+                      replace(/ +at.+jasminewd.+\n/, '').
+                      replace(/ +at.+selenium-webdriver.+\n/, '');
+    jasmine.getEnv().additionalScreenShots(traceStr, null, null, 'expect');
+  }
+
+  return retMatchers;
 };
 
 // Wrap internal Jasmine function to allow custom matchers
