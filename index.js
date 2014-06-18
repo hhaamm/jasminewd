@@ -438,11 +438,11 @@ jasmine.Matchers.matcherFn_ = function(matcherName, matcherFunction) {
         var originalAddMatcherResult;
         if (!/currentWaitIteration/.test(
             matcherThis.spec.addMatcherResult.toString())) {
-          // var matchError = new Error("Failed expectation");
-          // matchError.stack = matchError.stack.replace(/ +at.+jasminewd.+\n/, '');
+          var matchError = new Error("Failed expectation");
+          matchError.stack = matchError.stack.replace(/ +at.+jasminewd.+\n/, '');
           originalAddMatcherResult = matcherThis.spec.addMatcherResult;
           matcherThis.spec.addMatcherResult = function(result) {
-            // result.trace = matchError;
+            result.trace = matchError;
             if (result.passed_ || jasmine.getEnv().currentSpec.currentWaitIteration == null) {
               originalAddMatcherResult.call(this, result);
             } else {
