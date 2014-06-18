@@ -435,30 +435,32 @@ jasmine.Matchers.matcherFn_ = function(matcherName, matcherFunction) {
           return resolution;
         };
         // Monkey patch addMatcherResult to support retry
-        // var originalAddMatcherResult = matcherThis.spec.addMatcherResult;
-        // if (jasmine.getEnv().currentSpec.currentWaitIteration != null) {
-        //   matcherThis.spec.addMatcherResult = function(result) {
-        //     jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
-        //   };
-        // }
+        var originalAddMatcherResult;
+        if (!/currentWaitIteration/.test(
+            matcherThis.spec.addMatcherResult.toString())) {
+          // var matchError = new Error("Failed expectation");
+          // matchError.stack = matchError.stack.replace(/ +at.+jasminewd.+\n/, '');
+          originalAddMatcherResult = matcherThis.spec.addMatcherResult;
+          matcherThis.spec.addMatcherResult = function(result) {
+            // result.trace = matchError;
+            if (result.passed_ || jasmine.getEnv().currentSpec.currentWaitIteration == null) {
+              originalAddMatcherResult.call(this, result);
+            } else {
+              jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
+            }
+          }
+        };
+        // Execute custom matcher
         originalMatcherFn.apply(matcherFnThis, matcherFnArgs).
             apply(matcherThis, matcherArgs);
         // Restore addMatcherResult
-        // matcherThis.spec.addMatcherResult = originalAddMatcherResult;
+        if (originalAddMatcherResult) {
+          matcherThis.spec.addMatcherResult = originalAddMatcherResult;
+        }
       });
     } else {
-      // Monkey patch addMatcherResult to support retry
-      // var originalAddMatcherResult = matcherThis.spec.addMatcherResult;
-      // if (jasmine.getEnv().currentSpec.currentWaitIteration != null) {
-      //   matcherThis.spec.addMatcherResult = function(result) {
-      //     matcherThis.spec.matcherResultsFlag = false;
-      //     matcherThis.spec.tempMatcherResults.push(result);
-      //   };
-      // }
       originalMatcherFn.apply(matcherFnThis, matcherFnArgs).
           apply(matcherThis, matcherArgs);
-      // Restore addMatcherResult
-      // matcherThis.spec.addMatcherResult = originalAddMatcherResult;
     }
   };
 };
