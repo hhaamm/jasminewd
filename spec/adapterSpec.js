@@ -9,6 +9,8 @@ var webdriver = require('selenium-webdriver');
 
 var getFakeDriver = function() {
   var flow = webdriver.promise.controlFlow();
+  var retryPromiseTestCounter = 0;
+  var soonToBeAbsentReverseCounter = 4;
   return {
     controlFlow: function() {
       return flow;
@@ -26,6 +28,11 @@ var getFakeDriver = function() {
         return webdriver.promise.delayed(500).then(function() {
           return webdriver.promise.fulfilled('a');
         });
+      });
+    },
+    getRetryPromiseTestCounter: function() {
+      return flow.execute(function() {
+        return webdriver.promise.fulfilled(++retryPromiseTestCounter);
       });
     },
     getOtherValueA: function() {
@@ -53,6 +60,18 @@ var getFakeDriver = function() {
         return webdriver.promise.fulfilled({
           isDisplayed: function() {
             return webdriver.promise.fulfilled(true);
+          }
+        });
+      });
+    },
+    getSoonToBeAbsentElement: function() {
+      return flow.execute(function() {
+        return webdriver.promise.fulfilled({
+          isPresent: function() {
+            return webdriver.promise.fulfilled(true);
+          },
+          isDisplayed: function() {
+            return webdriver.promise.fulfilled(!!(--soonToBeAbsentReverseCounter));
           }
         });
       });
@@ -91,6 +110,33 @@ describe('webdriverJS Jasmine adapter', function() {
       // Example custom matcher returning a promise that resolves to true/false.
       toBeDisplayed: function() {
         return this.actual.isDisplayed();
+      },
+      // Example custom matcher returning a promise that resolves to true after 3 retries
+      toBeGreaterThanThree: function() {
+        return this.actual > 3;
+      },
+      toBeAbsent: function(exp) {
+        exp = (exp == null ? true : false);
+        if (!exp) throw "Custom matcher toBeAbsent doesn't " +
+                        "support false expectation";
+
+        var elmFinder = this.actual;
+
+        this.message = function message() {
+            return "Expected the thing to be absent or at least not visible.";
+        };
+        
+        return elmFinder.isPresent().
+        then(function isPresent(present) {
+            if (present) {
+                return elmFinder.isDisplayed().
+                then(function isDisplayed(visible) {
+                    return !visible;
+                });
+            } else {
+                return true;
+            }
+        });
       }
     });
   });
@@ -222,13 +268,25 @@ describe('webdriverJS Jasmine adapter', function() {
       var count = 0;
 
       rit('should retry until counter reaches 3', function() {
-          count++;
-          console.log(' <<< Current count: ' + count + ' >>> ');
-          expect(count).toBe(3);
+        count++;
+        console.log(' <<< Current count: ' + count + ' >>> ');
+        expect(count).toBe(3);
       });
 
       it('should have updated count to 3 after previous rit()', function() {
-          expect(count).toBe(3);
+        expect(count).toBe(3);
+      });
+
+      rit('should allow custom matchers to retry an absent fake element', function() {
+        console.log(' << Absent fake element iteration: ' + 
+                    this.currentWaitIteration + ' >> ');
+        expect(fakeDriver.getSoonToBeAbsentElement()).toBeAbsent();
+      });
+
+      rit('should allow custom matchers to retry a promise', function() {
+        console.log(' << Trying to retry on a promise counter, iteration: ' + 
+                    this.currentWaitIteration + ' >> ');
+        expect(fakeDriver.getRetryPromiseTestCounter()).toBeGreaterThanThree();
       });
   });
 });
