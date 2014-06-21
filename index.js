@@ -123,7 +123,7 @@ function wrapInControlFlow(globalFn, fnName) {
                   }); // temporary add them to the temp errors stack
                   jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
                   if (jasmine.getEnv().additionalScreenShots) {
-                    jasmine.getEnv().additionalScreenShots(ExpectationResult.trace, null, ExpectationResult, 'TempErr');
+                    jasmine.getEnv().additionalScreenShots(ExpectationResult.trace.stack, null, ExpectationResult, 'TempErr');
                   }
                   jasmine.getEnv().currentSpec.startMatcherResultsCount++;
                   promiseIteration.fulfill(false);
@@ -141,7 +141,7 @@ function wrapInControlFlow(globalFn, fnName) {
               }); // temporary add them to the temp errors stack
               jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
               if (jasmine.getEnv().additionalScreenShots) {
-                jasmine.getEnv().additionalScreenShots(e, null, ExpectationResult, 'TempErr');
+                jasmine.getEnv().additionalScreenShots(e.stack, null, ExpectationResult, 'TempErr');
               }
               promiseIteration.fulfill(false);
             });
@@ -274,7 +274,7 @@ function wrapMatcher(matcher, actualPromise, not) {
         } else {
           jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
           if (jasmine.getEnv().additionalScreenShots) {
-            jasmine.getEnv().additionalScreenShots(error, null, result, 'TempErr');
+            jasmine.getEnv().additionalScreenShots(error.stack, null, result, 'TempErr');
           }
         }
       };
@@ -296,7 +296,7 @@ function wrapMatcher(matcher, actualPromise, not) {
           } else {
             jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
             if (jasmine.getEnv().additionalScreenShots) {
-              jasmine.getEnv().additionalScreenShots(error, null, result, 'TempErr');
+              jasmine.getEnv().additionalScreenShots(error.stack, null, result, 'TempErr');
             }
           }
         };
@@ -317,7 +317,7 @@ function wrapMatcher(matcher, actualPromise, not) {
       } else {
         jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
         if (jasmine.getEnv().additionalScreenShots) {
-          jasmine.getEnv().additionalScreenShots(matchError, null, expectationResult, 'TempErr');
+          jasmine.getEnv().additionalScreenShots(matchError.stack, null, expectationResult, 'TempErr');
         }
       }
     });
@@ -351,7 +351,7 @@ function wrapRetryMatcher(matcher, actualValue, not) {
       } else {
         jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
         if (jasmine.getEnv().additionalScreenShots) {
-          jasmine.getEnv().additionalScreenShots(error, null, result, 'TempErr');
+          jasmine.getEnv().additionalScreenShots(error.stack, null, result, 'TempErr');
         }
       }
     };
@@ -373,7 +373,7 @@ function wrapRetryMatcher(matcher, actualValue, not) {
         } else {
           jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
           if (jasmine.getEnv().additionalScreenShots) {
-            jasmine.getEnv().additionalScreenShots(error, null, result, 'TempErr');
+            jasmine.getEnv().additionalScreenShots(error.stack, null, result, 'TempErr');
           }
         }
       };
@@ -477,7 +477,7 @@ jasmine.Matchers.matcherFn_ = function(matcherName, matcherFunction) {
             } else {
               jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
               if (jasmine.getEnv().additionalScreenShots) {
-                jasmine.getEnv().additionalScreenShots(result.trace, null, result, 'TempErr');
+                jasmine.getEnv().additionalScreenShots(result.trace.stack, null, result, 'TempErr');
               }
             }
           }
