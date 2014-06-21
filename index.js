@@ -122,6 +122,9 @@ function wrapInControlFlow(globalFn, fnName) {
                     trace: (new Error(userError))
                   }); // temporary add them to the temp errors stack
                   jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
+                  if (jasmine.getEnv().additionalScreenShots) {
+                    jasmine.getEnv().additionalScreenShots(ExpectationResult.trace, null, ExpectationResult, 'TempErr');
+                  }
                   jasmine.getEnv().currentSpec.startMatcherResultsCount++;
                   promiseIteration.fulfill(false);
                 } else {
@@ -137,6 +140,9 @@ function wrapInControlFlow(globalFn, fnName) {
                 trace: e
               }); // temporary add them to the temp errors stack
               jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
+              if (jasmine.getEnv().additionalScreenShots) {
+                jasmine.getEnv().additionalScreenShots(e, null, ExpectationResult, 'TempErr');
+              }
               promiseIteration.fulfill(false);
             });
 
@@ -171,6 +177,14 @@ function wrapInControlFlow(globalFn, fnName) {
           jasmine.getEnv().specFilter = function(spec) {
               return false;
           };
+          // Take an additional screen shot to help debugging
+          if (jasmine.getEnv().additionalScreenShots) {
+            var matchTrace = new Error("FAILED-LAST");
+            var traceStr = matchTrace.stack.
+                              replace(/ +at.+jasminewd.+\n/g, '').
+                              replace(/ +at.+selenium-webdriver.+\n/g, '');
+            jasmine.getEnv().additionalScreenShots(traceStr, null, null, 'FAILED-LAST');
+          }
           if (fnName === 'rit' || fnName === 'rrit') {
             // Report only the last retry collected errors
             var tempMatcherResults = jasmine.getEnv().currentSpec.tempMatcherResults;
@@ -259,6 +273,9 @@ function wrapMatcher(matcher, actualPromise, not) {
           jasmine.Spec.prototype.addMatcherResult.call(this, result);
         } else {
           jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
+          if (jasmine.getEnv().additionalScreenShots) {
+            jasmine.getEnv().additionalScreenShots(error, null, result, 'TempErr');
+          }
         }
       };
 
@@ -278,6 +295,9 @@ function wrapMatcher(matcher, actualPromise, not) {
             originalAddMatcherResult.call(this, result);
           } else {
             jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
+            if (jasmine.getEnv().additionalScreenShots) {
+              jasmine.getEnv().additionalScreenShots(error, null, result, 'TempErr');
+            }
           }
         };
         expectation[matcher].apply(expectation, originalArgs);
@@ -296,6 +316,9 @@ function wrapMatcher(matcher, actualPromise, not) {
         throw e;
       } else {
         jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
+        if (jasmine.getEnv().additionalScreenShots) {
+          jasmine.getEnv().additionalScreenShots(matchError, null, expectationResult, 'TempErr');
+        }
       }
     });
   };
@@ -327,6 +350,9 @@ function wrapRetryMatcher(matcher, actualValue, not) {
         jasmine.Spec.prototype.addMatcherResult.call(this, result);
       } else {
         jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
+        if (jasmine.getEnv().additionalScreenShots) {
+          jasmine.getEnv().additionalScreenShots(error, null, result, 'TempErr');
+        }
       }
     };
 
@@ -346,6 +372,9 @@ function wrapRetryMatcher(matcher, actualValue, not) {
           originalAddMatcherResult.call(this, result);
         } else {
           jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
+          if (jasmine.getEnv().additionalScreenShots) {
+            jasmine.getEnv().additionalScreenShots(error, null, result, 'TempErr');
+          }
         }
       };
       expectation[matcher].apply(expectation, originalArgs);
@@ -447,6 +476,9 @@ jasmine.Matchers.matcherFn_ = function(matcherName, matcherFunction) {
               originalAddMatcherResult.call(this, result);
             } else {
               jasmine.getEnv().currentSpec.tempMatcherResults.push(result);
+              if (jasmine.getEnv().additionalScreenShots) {
+                jasmine.getEnv().additionalScreenShots(result.trace, null, result, 'TempErr');
+              }
             }
           }
         };
