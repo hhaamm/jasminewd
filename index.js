@@ -114,6 +114,20 @@ function wrapInControlFlow(globalFn, fnName) {
             var promiseIteration = webdriver.promise.defer();
 
             flow.execute(function() {
+              flow.on('uncaughtException', function(e) {
+                var expectationResult = new jasmine.ExpectationResult({
+                  passed: false,
+                  message: 'Webdriver failure: ' + e.stack.split(":")[0],
+                  trace: e
+                }); // temporary add them to the temp errors stack
+                jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
+                if (jasmine.getEnv().additionalScreenShots) {
+                  jasmine.getEnv().additionalScreenShots(e.stack, null, expectationResult, 'TempErr');
+                }
+                console.log("\nWarning, uncaughtException: " + expectationResult.message);
+                promiseIteration.fulfill(false);
+              });
+
               fn.call(jasmine.getEnv().currentSpec, function(userError) {
                 if (fn.length !== 0 && userError) {
                   var expectationResult = new jasmine.ExpectationResult({
@@ -123,7 +137,7 @@ function wrapInControlFlow(globalFn, fnName) {
                   }); // temporary add them to the temp errors stack
                   jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
                   if (jasmine.getEnv().additionalScreenShots) {
-                    jasmine.getEnv().additionalScreenShots(ExpectationResult.trace.stack, null, ExpectationResult, 'TempErr');
+                    jasmine.getEnv().additionalScreenShots(expectationResult.trace.stack, null, expectationResult, 'TempErr');
                   }
                   jasmine.getEnv().currentSpec.startMatcherResultsCount++;
                   promiseIteration.fulfill(false);
@@ -141,7 +155,7 @@ function wrapInControlFlow(globalFn, fnName) {
               }); // temporary add them to the temp errors stack
               jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
               if (jasmine.getEnv().additionalScreenShots) {
-                jasmine.getEnv().additionalScreenShots(e.stack, null, ExpectationResult, 'TempErr');
+                jasmine.getEnv().additionalScreenShots(e.stack, null, expectationResult, 'TempErr');
               }
               promiseIteration.fulfill(false);
             });
