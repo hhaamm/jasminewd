@@ -115,9 +115,10 @@ function wrapInControlFlow(globalFn, fnName) {
 
             flow.execute(function() {
               flow.on('uncaughtException', function(e) {
+                var webdriverFailure = e.stack == null ? e : e.stack.split(":")[0];
                 var expectationResult = new jasmine.ExpectationResult({
                   passed: false,
-                  message: 'Webdriver failure: ' + e.stack.split(":")[0],
+                  message: 'Webdriver failure: ' + webdriverFailure,
                   trace: e
                 }); // temporary add them to the temp errors stack
                 jasmine.getEnv().currentSpec.tempMatcherResults =
