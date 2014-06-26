@@ -120,6 +120,8 @@ function wrapInControlFlow(globalFn, fnName) {
                   message: 'Webdriver failure: ' + e.stack.split(":")[0],
                   trace: e
                 }); // temporary add them to the temp errors stack
+                jasmine.getEnv().currentSpec.tempMatcherResults =
+                  jasmine.getEnv().currentSpec.tempMatcherResults || [];
                 jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
                 if (jasmine.getEnv().additionalScreenShots) {
                   jasmine.getEnv().additionalScreenShots(e.stack, null, expectationResult, 'TempErr');
