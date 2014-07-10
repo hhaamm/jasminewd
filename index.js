@@ -127,7 +127,10 @@ function wrapInControlFlow(globalFn, fnName) {
                 if (jasmine.getEnv().additionalScreenShots) {
                   jasmine.getEnv().additionalScreenShots(e.stack, null, expectationResult, 'TempErr');
                 }
-                console.log("\nWarning, uncaughtException: " + expectationResult.message);
+                if (jasmine.getEnv().currentSpec.lastUncaughtException !== expectationResult.message) {
+                  console.log("\nWarning, uncaughtException: " + expectationResult.message);
+                  jasmine.getEnv().currentSpec.lastUncaughtException = expectationResult.message;
+                }
                 promiseIteration.fulfill(false);
               });
 
@@ -497,8 +500,8 @@ jasmine.Matchers.matcherFn_ = function(matcherName, matcherFunction) {
                 jasmine.getEnv().additionalScreenShots(result.trace.stack, null, result, 'TempErr');
               }
             }
-          }
-        };
+          };
+        }
         // Execute custom matcher
         originalMatcherFn.apply(matcherFnThis, matcherFnArgs).
             apply(matcherThis, matcherArgs);
