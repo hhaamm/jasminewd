@@ -4,6 +4,11 @@ jasminewd [![Build Status](https://travis-ci.org/angular/jasminewd.png?branch=ma
 Adapter for Jasmine-to-WebDriverJS. Used by [Protractor](http://www.github.com/angular/protractor).
 
 
+Added Features in this Fork
+---------------------------
+
+ - `rit()` and `rrit()` wrappers around it() and iit(). Within an `rit()` block, if any expectation fails or there is some webdriver error it will automatically retry the whole block up to `jasmine.getEnv().defaultTimeoutInterval` or whatever 3rd argument passed if any.
+
 Features
 --------
 
