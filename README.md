@@ -9,6 +9,12 @@ Added Features in this Fork
 
  - `rit()` and `rrit()` wrappers around it() and iit(). Within an `rit()` block, if any expectation fails or there is some webdriver error it will automatically retry the whole block up to `jasmine.getEnv().defaultTimeoutInterval` or whatever 3rd argument passed if any.
 
+Issues with this Fork
+---------------------
+
+ - Code is ugly but does the job (PR's are welcome).
+ - Jasmine frozen to 1.3.1 through minijasminenode 0.4.0 dependency.
+
 Features
 --------
 
