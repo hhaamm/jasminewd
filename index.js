@@ -447,8 +447,8 @@ global.expect = function(actual) {
   var retMatchers;
   if (actual instanceof webdriver.promise.Promise) {
     if (actual instanceof webdriver.WebElement) {
-      throw 'expect called with WebElement argument, expected a Promise. ' +
-          'Did you mean to use .getText()?';
+      console.warn('Warning: expect called with WebElement argument, ' +
+        'usually expected a Promise. Did you mean to use .getText()?');
     }
     retMatchers = promiseMatchers(actual);
   } else {

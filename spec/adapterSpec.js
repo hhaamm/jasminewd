@@ -217,8 +217,8 @@ describe('webdriverJS Jasmine adapter', function() {
     var webElement = new webdriver.WebElement(fakeDriver, 'idstring');
 
     expect(function() {
-      expect(webElement).toEqual(4);
-    }).toThrow('expect called with WebElement argument, expected a Promise. ' +
+      expect(webElement).toContain('controlFlow');
+    }).not.toThrow('expect called with WebElement argument, expected a Promise. ' +
         'Did you mean to use .getText()?');
   });
 
