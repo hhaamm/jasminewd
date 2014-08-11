@@ -225,7 +225,7 @@ describe('webdriverJS Jasmine adapter', function() {
 
   // it('should timeout after 200ms', function() {
   //   expect(fakeDriver.getValueA()).toEqual('a');
-  // }, 200);
+  // }, 300);
 
   // it('should timeout after 300ms', function() {
   //   fakeDriver.sleep(9999);
@@ -237,7 +237,7 @@ describe('webdriverJS Jasmine adapter', function() {
   // });
 
   it('should pass after the timed out tests', function() {
-    expect(true).toEqual(true);
+    expect(fakeDriver.getValueA()).toEqual('a');
   });
 
   describe('should work for both synchronous and asynchronous tests', function() {
