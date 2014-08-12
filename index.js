@@ -115,7 +115,8 @@ function wrapInControlFlow(globalFn, fnName) {
 
             flow.execute(function() {
               flow.on('uncaughtException', function(e) {
-                var webdriverFailure = e.stack == null ? e : e.stack.split(":")[0];
+                var webdriverFailure = (e.stack == null || !e.stack.toString().split) ?
+                                        e : e.stack.toString().split(":")[0];
                 var expectationResult = new jasmine.ExpectationResult({
                   passed: false,
                   message: 'Webdriver failure: ' + webdriverFailure,
@@ -154,9 +155,11 @@ function wrapInControlFlow(globalFn, fnName) {
             }, desc_).then(function() {
               promiseIteration.fulfill(true);
             }, function(e) {
+              var webdriverFailure = (e.stack == null || !e.stack.toString().split) ?
+                                      e : e.stack.toString().split(":")[0];
               var expectationResult = new jasmine.ExpectationResult({
                 passed: false,
-                message: 'Webdriver failure: ' + e.stack.split(":")[0],
+                message: 'Webdriver failure: ' + webdriverFailure,
                 trace: e
               }); // temporary add them to the temp errors stack
               jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
@@ -325,10 +328,12 @@ function wrapMatcher(matcher, actualPromise, not) {
       }
     }, function(e) {
       // Catch webdriver errors and turn them into expectation errors
+      var webdriverFailure = (e.stack == null || !e.stack.toString().split) ?
+                              e : e.stack.toString().split(":")[0];
       var expectationResult = new jasmine.ExpectationResult({
         passed: false,
         expected: expected,
-        message: 'Webdriver failure: ' + e.stack.split(":")[0],
+        message: 'Webdriver failure: ' + webdriverFailure,
         trace: matchError
       });
       // Retry: only add each addMatcherResult failure once, i.e. the first time
