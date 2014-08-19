@@ -64,7 +64,9 @@ function validateString(stringtoValidate) {
 /**
  * Wraps a function so it runs inside a webdriver.promise.ControlFlow and
  * waits for the flow to complete before continuing.
+ * Also adds options features like {skippable: true}.
  * @param {!Function} globalFn The function to wrap.
+ * @param {!String} fnName The function name.
  * @return {!Function} The new function.
  */
 function wrapInControlFlow(globalFn, fnName) {
@@ -146,7 +148,6 @@ function wrapInControlFlow(globalFn, fnName) {
                   if (jasmine.getEnv().additionalScreenShots) {
                     jasmine.getEnv().additionalScreenShots(expectationResult.trace.stack, null, expectationResult, 'TempErr');
                   }
-                  jasmine.getEnv().currentSpec.startMatcherResultsCount++;
                   promiseIteration.fulfill(false);
                 } else {
                   promiseIteration.fulfill(true);
@@ -236,11 +237,21 @@ function wrapInControlFlow(globalFn, fnName) {
       case 'rrit':
         description = validateString(arguments[0]);
         func = validateFunction(arguments[1]);
-        if (!arguments[2]) {
-          globalFn(description, asyncTestFn(func));
+        var timeoutArg = arguments[2];
+        var opts = arguments[3]; // additional options like skippable
+        var executeSpec = true;
+        if (opts && opts.skippable && jasmine.getEnv().skipDetailedSpecs != null) {
+          executeSpec = !jasmine.getEnv().skipDetailedSpecs;
+        }
+        if (!timeoutArg) {
+          if (executeSpec) {
+            globalFn(description, asyncTestFn(func));
+          }
         } else {
-          timeout = validateNumber(arguments[2]);
-          globalFn(description, asyncTestFn(func, null, timeout), timeout);
+          if (executeSpec) {
+            timeout = validateNumber(timeoutArg);
+            globalFn(description, asyncTestFn(func, null, timeout), timeout);
+          }
         }
         break;
       case 'beforeEach':
@@ -269,6 +280,14 @@ global.rrit = wrapInControlFlow(global.rrit, 'rrit');
 global.beforeEach = wrapInControlFlow(global.beforeEach, 'beforeEach');
 global.afterEach = wrapInControlFlow(global.afterEach, 'afterEach');
 
+// Magic fn to control fast / slow testing
+jasmine.getEnv().setSkipDetailedSpecs = function(boolValue) {
+    global.it('set skipDetailedSpecs: ' + boolValue, function() {
+        jasmine.getEnv().skipDetailedSpecs = boolValue;
+    });
+
+    jasmine.getEnv().skipDetailedSpecs = boolValue;
+};
 
 /**
  * Wrap a Jasmine matcher function so that it can take webdriverJS promises.

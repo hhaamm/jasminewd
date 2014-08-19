@@ -241,6 +241,18 @@ describe('webdriverJS Jasmine adapter', function() {
     expect(fakeDriver.getValueA()).toEqual('a');
   });
 
+  describe('Supports {skippable: true} option', function() {
+    it('should execute and pass given we are not skipping tests', function() {
+        expect(3).not.toEqual(7);
+    });
+
+    jasmine.getEnv().setSkipDetailedSpecs(true);
+    
+    it('should not execute this failing test since is marked as skipped', function() {
+        expect(3).toEqual(9);
+    }, null, {skippable: true});
+  });
+
   describe('should work for both synchronous and asynchronous tests', function() {
     var x;
 
