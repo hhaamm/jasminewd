@@ -222,18 +222,19 @@ describe('webdriverJS Jasmine adapter', function() {
   });
 
   // Uncomment to see timeout failures.
+  // ddescribe('Timeout Failures', function() {
+  //   it('should timeout after 200ms', function() {
+  //     expect(fakeDriver.getValueA()).toEqual('a');
+  //   }, 300);
 
-  // it('should timeout after 200ms', function() {
-  //   expect(fakeDriver.getValueA()).toEqual('a');
-  // }, 300);
+  //   it('should timeout after 300ms', function() {
+  //     fakeDriver.sleep(9999);
+  //     expect(fakeDriver.getValueB()).toEqual('b');
+  //   }, 300);
 
-  // it('should timeout after 300ms', function() {
-  //   fakeDriver.sleep(9999);
-  //   expect(fakeDriver.getValueB()).toEqual('b');
-  // }, 300);
-
-  // it('should pass errors from done callback', function(done) {
-  //   done('an error');
+  //   it('should pass errors from done callback', function(done) {
+  //     done('an error');
+  //   });
   // });
 
   it('should pass after the timed out tests', function() {
