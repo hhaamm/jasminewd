@@ -321,7 +321,7 @@ function wrapMatcher(matcher, actualPromise, not) {
         }
       };
 
-      if (expected instanceof webdriver.promise.Promise) {
+      if (webdriver.promise.isPromise(expected)) {
         if (originalArgs.length > 1) {
           throw error('Multi-argument matchers with promises are not ' +
               'supported.');
@@ -469,7 +469,7 @@ var originalExpect = global.expect;
 
 global.expect = function(actual) {
   var retMatchers;
-  if (actual instanceof webdriver.promise.Promise) {
+  if (webdriver.promise.isPromise(actual)) {  
     if (actual instanceof webdriver.WebElement) {
       console.warn('Warning: expect called with WebElement argument, ' +
         'usually expected a Promise. Did you mean to use .getText()?');
@@ -502,7 +502,7 @@ jasmine.Matchers.matcherFn_ = function(matcherName, matcherFunction) {
     var matcherArgs = jasmine.util.argsToArray(arguments);
     var result = matcherFunction.apply(this, arguments);
 
-    if (result instanceof webdriver.promise.Promise) {
+    if (webdriver.promise.isPromise(result)) {
       result.then(function(resolution) {
         matcherFnArgs[1] = function() {
           return resolution;

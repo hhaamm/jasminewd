@@ -251,6 +251,10 @@ describe('webdriverJS Jasmine adapter', function() {
     it('should not execute this failing test since is marked as skipped', function() {
         expect(3).toEqual(9);
     }, null, {skippable: true});
+    
+    rit('should not execute skipped rit failing test either', function() {
+        expect(4).toEqual(10);
+    }, null, {skippable: true});
   });
 
   describe('should work for both synchronous and asynchronous tests', function() {
