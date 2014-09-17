@@ -469,7 +469,7 @@ var originalExpect = global.expect;
 
 global.expect = function(actual) {
   var retMatchers;
-  if (webdriver.promise.isPromise(actual)) {  
+  if (webdriver.promise.isPromise(actual) || typeof actual.locator === 'function') {
     if (actual instanceof webdriver.WebElement) {
       console.warn('Warning: expect called with WebElement argument, ' +
         'usually expected a Promise. Did you mean to use .getText()?');
