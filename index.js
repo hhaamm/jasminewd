@@ -580,7 +580,7 @@ OnTimeoutReporter.prototype.log = function() {};
 // to ensure that it runs after any afterEach() blocks with webdriver tasks
 // get to complete first.
 jasmine.getEnv().addReporter(new OnTimeoutReporter(function() {
-  console.warn('A Jasmine spec timed out. Resetting the WebDriver Control Flow.');
+  console.warn(' A Jasmine spec timed out. Resetting the WebDriver Control Flow.');
   console.warn('The last active task was: ');
   console.warn(
       (flow.activeFrame_  && flow.activeFrame_.getPendingTask() ?
