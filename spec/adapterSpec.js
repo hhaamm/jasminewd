@@ -71,7 +71,8 @@ var getFakeDriver = function() {
             return webdriver.promise.fulfilled(true);
           },
           isDisplayed: function() {
-            return webdriver.promise.fulfilled(!!(--soonToBeAbsentReverseCounter));
+            return webdriver.promise.fulfilled(
+              !!(--soonToBeAbsentReverseCounter));
           }
         });
       });
@@ -107,11 +108,12 @@ describe('webdriverJS Jasmine adapter', function() {
       toBeLotsMoreThan: function(expected) {
         return this.actual > expected + 100;
       },
-      // Example custom matcher returning a promise that resolves to true/false.
+      // e.g. custom matcher returning a promise that resolves to true/false.
       toBeDisplayed: function() {
         return this.actual.isDisplayed();
       },
-      // Example custom matcher returning a promise that resolves to true after 3 retries
+      // Example custom matcher returning a promise that resolves to 
+      // true after 3 retries
       toBeGreaterThanThree: function() {
         return this.actual > 3;
       },
@@ -123,19 +125,18 @@ describe('webdriverJS Jasmine adapter', function() {
         var elmFinder = this.actual;
 
         this.message = function message() {
-            return "Expected the thing to be absent or at least not visible.";
+          return "Expected the thing to be absent or at least not visible.";
         };
         
-        return elmFinder.isPresent().
-        then(function isPresent(present) {
-            if (present) {
-                return elmFinder.isDisplayed().
-                then(function isDisplayed(visible) {
-                    return !visible;
-                });
-            } else {
-                return true;
-            }
+        return elmFinder.isPresent().then(function isPresent(present) {
+          if (present) {
+            return elmFinder.isDisplayed().
+            then(function isDisplayed(visible) {
+                return !visible;
+            });
+          } else {
+            return true;
+          }
         });
       }
     });
@@ -248,16 +249,16 @@ describe('webdriverJS Jasmine adapter', function() {
 
     jasmine.getEnv().setSkipDetailedSpecs(true);
     
-    it('should not execute this failing test since is marked as skipped', function() {
+    it('skip this failing test since is marked as skipped', function() {
         expect(3).toEqual(9);
     }, null, {skippable: true});
     
-    rit('should not execute skipped rit failing test either', function() {
+    rit('should also skip rit failing test', function() {
         expect(4).toEqual(10);
     }, null, {skippable: true});
   });
 
-  describe('should work for both synchronous and asynchronous tests', function() {
+  describe('works for both synchronous and asynchronous tests', function() {
     var x;
 
     beforeEach(function() {
@@ -281,28 +282,28 @@ describe('webdriverJS Jasmine adapter', function() {
   });
 
   describe('should support retry method rit()', function() {
-      var count = 0;
+    var count = 0;
 
-      rit('should retry until counter reaches 3', function() {
-        count++;
-        console.log(' <<< Current count: ' + count + ' >>> ');
-        expect(count).toBe(3);
-      });
+    rit('should retry until counter reaches 3', function() {
+      count++;
+      console.log(' <<< Current count: ' + count + ' >>>');
+      expect(count).toBe(3);
+    });
 
-      it('should have updated count to 3 after previous rit()', function() {
-        expect(count).toBe(3);
-      });
+    it('should have updated count to 3 after previous rit()', function() {
+      expect(count).toBe(3);
+    });
 
-      rit('should allow custom matchers to retry an absent fake element', function() {
-        console.log(' << Absent fake element iteration: ' + 
-                    this.currentWaitIteration + ' >> ');
-        expect(fakeDriver.getSoonToBeAbsentElement()).toBeAbsent();
-      });
+    rit('allows custom matchers to retry an absent fake element', function() {
+      console.log(' << Absent fake element iteration: ' + 
+                  this.currentWaitIteration + ' >>');
+      expect(fakeDriver.getSoonToBeAbsentElement()).toBeAbsent();
+    });
 
-      rit('should allow custom matchers to retry a promise', function() {
-        console.log(' << Trying to retry on a promise counter, iteration: ' + 
-                    this.currentWaitIteration + ' >> ');
-        expect(fakeDriver.getRetryPromiseTestCounter()).toBeGreaterThanThree();
-      });
+    rit('should allow custom matchers to retry a promise', function() {
+      console.log(' << Trying to retry on a promise counter, iteration: ' + 
+                  this.currentWaitIteration + ' >>');
+      expect(fakeDriver.getRetryPromiseTestCounter()).toBeGreaterThanThree();
+    });
   });
 });
