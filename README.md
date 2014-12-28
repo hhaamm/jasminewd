@@ -7,7 +7,7 @@ Adapter for Jasmine-to-WebDriverJS. Used by [Protractor](http://www.github.com/a
 Added Features in this Fork
 ---------------------------
 
- - `rit()` and `rrit()` wrappers around it() and iit(). Within an `rit()` block, if any expectation fails or there is some webdriver error it will automatically retry the whole block up to `jasmine.getEnv().defaultTimeoutInterval` or whatever 3rd argument passed if any.
+ - `rit()` and `rrit()` wrappers around it() and iit() implement the [Spin Asserts](https://saucelabs.com/resources/selenium/lose-races-and-win-at-selenium) pattern. The basic idea is pretty simple; within an `rit()` block, if any expectation fails or there is some webdriver error it will automatically retry the whole block up to `jasmine.getEnv().defaultTimeoutInterval` or whatever 3rd argument passed if any.
  - Within a `rit()` block it is possible to trace in which retry iteration the spec is with `this.currentWaitIteration`, `0` means is the first time, 1 means is happening during the first retry and so on.
  - Is possible to skip certain redundant test when `jasmine.getEnv().setSkipDetailedSpecs(true);` via a third argument: `rit(desc, fn, {skippable: true})`. I needed a way to skip certain tests when targeting faster test steps, e.g. skip testing for the whole page elements when we just want to know that the page loaded in order to keep going with something else.
 
