@@ -64,7 +64,7 @@ function validateString(stringtoValidate) {
 /**
  * Wraps a function so it runs inside a webdriver.promise.ControlFlow and
  * waits for the flow to complete before continuing.
- * Also adds options features like {skippable: true}.
+ * Also adds options features like {detailTestLevel: 1}.
  * @param {!Function} globalFn The function to wrap.
  * @param {!String} fnName The function name.
  * @return {!Function} The new function.
@@ -238,10 +238,10 @@ function wrapInControlFlow(globalFn, fnName) {
         description = validateString(arguments[0]);
         func = validateFunction(arguments[1]);
         var timeoutArg = arguments[2];
-        var opts = arguments[3]; // additional options like skippable
+        var opts = arguments[3]; // additional options like detailTestLevel
         var executeSpec = true;
-        if (opts && opts.skippable && jasmine.getEnv().skipDetailedSpecs != null) {
-          executeSpec = !jasmine.getEnv().skipDetailedSpecs;
+        if (opts && opts.detailTestLevel && jasmine.getEnv().detailTestLevel != null) {
+          executeSpec = jasmine.getEnv().detailTestLevel >= opts.detailTestLevel;
         }
         if (!timeoutArg) {
           if (executeSpec) {
@@ -280,13 +280,80 @@ global.rrit = wrapInControlFlow(global.rrit, 'rrit');
 global.beforeEach = wrapInControlFlow(global.beforeEach, 'beforeEach');
 global.afterEach = wrapInControlFlow(global.afterEach, 'afterEach');
 
-// Magic fn to control fast / slow testing
-jasmine.getEnv().setSkipDetailedSpecs = function(boolValue) {
-    global.it('set skipDetailedSpecs: ' + boolValue, function() {
-        jasmine.getEnv().skipDetailedSpecs = boolValue;
-    });
+// Default deep testing level is 0 (fast)
+jasmine.getEnv().detailTestLevel = 0;
 
-    jasmine.getEnv().skipDetailedSpecs = boolValue;
+/**
+ * Set deep testing level for upcoming tests. Used to control fast/slow testing
+ * @param  {Number} numLevel Deep testing level, default: 0 (fast)
+ */
+jasmine.getEnv().setDetailTestLevel = function(numLevel) {
+  if (typeof numLevel !== 'number') throw new Error(
+    'numLevel must be a number but is: ' + numLevel);
+
+  global.it('set detailTestLevel: ' + numLevel, function() {
+    jasmine.getEnv().originalSpecLevel = 
+      jasmine.getEnv().detailTestLevel || 0;
+    jasmine.getEnv().detailTestLevel = numLevel;
+  });
+
+  jasmine.getEnv().originalSuiteLevel = 
+    jasmine.getEnv().detailTestLevel || 0;
+  jasmine.getEnv().detailTestLevel = numLevel;
+};
+
+/**
+ * Restore deep testing level. Used to restore fast/slow testing speed.
+ */
+jasmine.getEnv().restoreDetailTestLevel = function() {
+  global.it('restore detailTestLevel', function() {
+    jasmine.getEnv().detailTestLevel = jasmine.getEnv().originalSpecLevel;
+  });
+
+  jasmine.getEnv().detailTestLevel = jasmine.getEnv().originalSuiteLevel;
+};
+
+/**
+ * Better DSL to perform jasmine tests at a specified deep level
+ * @param  {Number}   numLevel Deep testing level, default: 0 (fast)
+ *  0 = only run faster inevitable tests/steps
+ *  1 = also run detailed test, i.e. deep testing >= 1
+ *  2 = also run exhaustive test, i.e. deep testing >= 2
+ * @param  {Function} opt_fn       Callback proc of what to execute at the
+ *  specified numLevel.
+ *  If omitted then this method will only set current detail test level.
+ */
+global.jF = function(numLevel, opt_fn) {
+  if (typeof numLevel !== 'number') throw new Error(
+    'numLevel is required and must be a number but is: ' + numLevel);
+  if (opt_fn != null && typeof opt_fn !== 'function') throw new Error(
+    'When opt_fn is set it must be a function but is: ' + opt_fn);
+  
+  jasmine.getEnv().setDetailTestLevel(numLevel);
+  if (opt_fn != null) {
+    opt_fn();
+  }
+  jasmine.getEnv().restoreDetailTestLevel();
+};
+
+/**
+ * Jasmine schedule below specs only if current deep test level >= numLevel
+ * @param  {Number}   numLevel Deep testing level
+ *  0 = always execute this test, i.e. further steps may not work if not run
+ *  1 = detailed test; only execute when current deep testing >= 1
+ *  2 = more exhaustive test; only execute when current deep testing >= 2
+ * @param  {Function} fn       Callback proc of what to execute if the
+ *  current deep testing level is >= numLevel.
+ */
+global.ifjF = function(numLevel, fn) {
+  if (typeof numLevel !== 'number') throw new Error(
+    'numLevel is required and must be a number but is: ' + numLevel);
+  if (typeof fn !== 'function') throw new Error(
+    'fn is required and must be a function but is: ' + fn);
+  
+  if (jasmine.getEnv().detailTestLevel >= numLevel) {
+    fn();
+  }
 };
 
 /**

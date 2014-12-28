@@ -132,7 +132,7 @@ describe('webdriverJS Jasmine adapter', function() {
           if (present) {
             return elmFinder.isDisplayed().
             then(function isDisplayed(visible) {
-                return !visible;
+              return !visible;
             });
           } else {
             return true;
@@ -242,20 +242,58 @@ describe('webdriverJS Jasmine adapter', function() {
     expect(fakeDriver.getValueA()).toEqual('a');
   });
 
-  describe('Supports {skippable: true} option', function() {
+  describe('Supports {detailTestLevel: N} option', function() {
     it('should execute and pass given we are not skipping tests', function() {
-        expect(3).not.toEqual(7);
+      expect(3).not.toEqual(7);
     });
 
-    jasmine.getEnv().setSkipDetailedSpecs(true);
+    it('should also execute and pass given we are not skipping tests', function() {
+      expect(4).not.toEqual(7);
+    }, null, {detailTestLevel: 0});
+
+    ifjF(0, function() {
+      rit('should also execute and pass given detail level 0 is not skippable', 
+      function() {
+        expect(5).not.toEqual(7);
+      });
+    });
+
+    jasmine.getEnv().setDetailTestLevel(1);
+
+    it('should execute and pass given the set detailTestLevel is <= current', function() {
+      expect(5).not.toEqual(8);
+    }, null, {detailTestLevel: 1});
+
+    ifjF(1, function() {
+      rit('should execute and pass given the set detailTestLevel is <= 1', 
+      function() {
+        expect(6).not.toEqual(8);
+      });
+    });
     
-    it('skip this failing test since is marked as skipped', function() {
-        expect(3).toEqual(9);
-    }, null, {skippable: true});
+    it('skip this failing test since is marked as {detailTestLevel: 2}', function() {
+      expect(6).toEqual(9);
+    }, null, {detailTestLevel: 2});
     
-    rit('should also skip rit failing test', function() {
-        expect(4).toEqual(10);
-    }, null, {skippable: true});
+    rit('should also skip rit failing test {detailTestLevel: 3}', function() {
+      expect(7).toEqual(10);
+    }, null, {detailTestLevel: 3});
+
+    ifjF(2, function() {
+      rit('should also skip rit failing test with ifjF(2)', function() {
+        expect(8).toEqual(10);
+      });
+    });
+
+    ifjF(3, function() {
+      rit('should also skip rit failing test with ifjF(3)', function() {
+        expect(9).toEqual(10);
+      });
+    });
+
+    jF(0, function() { _someTestsLevel(0); });
+    jF(1, function() { _someTestsLevel(1); });
+    jF(2, function() { _someTestsLevel(2); });
   });
 
   describe('works for both synchronous and asynchronous tests', function() {
@@ -306,4 +344,39 @@ describe('webdriverJS Jasmine adapter', function() {
       expect(fakeDriver.getRetryPromiseTestCounter()).toBeGreaterThanThree();
     });
   });
+
+  // TODO
+  xdescribe('should support retry describe() through rdescribe()', function() {
+    var countDescribe1 = 0;
+    rdescribe('rdescribe() retries until counter==3 using it()', function() {
+      countDescribe1++;
+      it('this time number: ' + countDescribe1, function() {
+        console.log( '<< Describe count: ' + countDescribe1 + ' >>');
+        expect(countDescribe1).toBe(3);
+      });
+    });
+    
+    var countDescribe2 = 0;
+    rdescribe('rdescribe() retries until counter==3 using rit()', function() {
+      countDescribe2++;
+      rit('this time number: ' + countDescribe2, function() {
+        console.log( '<< Describe count: ' + countDescribe2 + ' >>');
+        expect(countDescribe2).toBe(3);
+      });
+    });
+  });
 });
+
+function _someTestsLevel(numLevel) {
+  it('should execute this test level ' + numLevel, function() {
+    expect(numLevel).not.toBe(numLevel + 1);
+  }, null, {detailTestLevel: numLevel});
+  
+  it('should NOT execute this test level ' + numLevel + 1, function() {
+    expect(numLevel).toBe(numLevel - 1);
+  }, null, {detailTestLevel: numLevel + 1});
+  
+  it('should NOT execute this test level ' + numLevel + 2, function() {
+    expect(numLevel).toBe(numLevel - 2);
+  }, null, {detailTestLevel: numLevel + 2});
+}
