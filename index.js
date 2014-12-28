@@ -566,6 +566,14 @@ OnTimeoutReporter.prototype.reportSpecResults = function(spec) {
         var jasmineTimeoutRegexp =
             /timed out after \d+ msec waiting for spec to complete/;
         if (failureItem.toString().match(jasmineTimeoutRegexp)) {
+          if (!failureItem.trace.stack) {
+            if (spec.lastStackTrace) {
+              failureItem.trace = spec.lastStackTrace;
+            } else {
+              // Stacktrace: undefined
+              //  failureItem.trace = new Error('Timeout trace');
+            }
+          }
           this.callback();
         }
       }
