@@ -72,7 +72,7 @@ function validateString(stringtoValidate) {
 function wrapInControlFlow(globalFn, fnName) {
   return function() {
     var driverError = new Error();
-    driverError.stack = driverError.stack.replace(/ +at.+jasminewd.+\n/, '');
+    // driverError.stack = driverError.stack.replace(/ +at.+jasminewd.+\n/, '');
 
     function asyncTestFn(fn, desc, opt_timeout) {
       return function(done) {
@@ -101,18 +101,19 @@ function wrapInControlFlow(globalFn, fnName) {
         // Retry //
         ///////////
         var flowFinished;
+        var currentSpec = jasmine.getEnv().currentSpec; //shortcut
 
         if (fnName === 'rit' || fnName === 'rrit') {
           asyncFnDone.fulfill(); // not used on retries
-          
+
           // With retry
-          jasmine.getEnv().currentSpec.currentWaitIteration = -1;
-          jasmine.getEnv().currentSpec.tempMatcherResults = [];
-          
+          currentSpec.currentWaitIteration = -1;
+          currentSpec.tempMatcherResults = [];
+
           flowFinished = flow.wait(function() {
-            jasmine.getEnv().currentSpec.currentWaitIteration++;
-            jasmine.getEnv().currentSpec.initialCountOfMatcherResults = 
-              jasmine.getEnv().currentSpec.tempMatcherResults.length;
+            currentSpec.currentWaitIteration++;
+            currentSpec.initialCountOfMatcherResults =
+              currentSpec.tempMatcherResults.length;
             var promiseIteration = webdriver.promise.defer();
 
             flow.execute(function() {
@@ -124,27 +125,28 @@ function wrapInControlFlow(globalFn, fnName) {
                   message: 'Webdriver failure: ' + webdriverFailure,
                   trace: e
                 }); // temporary add them to the temp errors stack
-                jasmine.getEnv().currentSpec.tempMatcherResults =
-                  jasmine.getEnv().currentSpec.tempMatcherResults || [];
-                jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
+                currentSpec.tempMatcherResults =
+                  currentSpec.tempMatcherResults || [];
+                currentSpec.tempMatcherResults.push(expectationResult);
                 if (jasmine.getEnv().additionalScreenShots) {
                   jasmine.getEnv().additionalScreenShots(e.stack, null, expectationResult, 'TempErr');
                 }
-                if (jasmine.getEnv().currentSpec.lastUncaughtException !== expectationResult.message) {
+                if (currentSpec.lastUncaughtException !== expectationResult.message) {
                   console.log("\nWarning, uncaughtException: " + expectationResult.message);
-                  jasmine.getEnv().currentSpec.lastUncaughtException = expectationResult.message;
+                  console.log(e.stack);
+                  currentSpec.lastUncaughtException = expectationResult.message;
                 }
                 promiseIteration.fulfill(false);
               });
 
-              fn.call(jasmine.getEnv().currentSpec, function(userError) {
+              fn.call(currentSpec, function(userError) {
                 if (fn.length !== 0 && userError) {
                   var expectationResult = new jasmine.ExpectationResult({
                     passed: false,
                     message: 'At done func with error: ' + userError,
                     trace: (new Error(userError))
                   }); // temporary add them to the temp errors stack
-                  jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
+                  currentSpec.tempMatcherResults.push(expectationResult);
                   if (jasmine.getEnv().additionalScreenShots) {
                     jasmine.getEnv().additionalScreenShots(expectationResult.trace.stack, null, expectationResult, 'TempErr');
                   }
@@ -163,7 +165,7 @@ function wrapInControlFlow(globalFn, fnName) {
                 message: 'Webdriver failure: ' + webdriverFailure,
                 trace: e
               }); // temporary add them to the temp errors stack
-              jasmine.getEnv().currentSpec.tempMatcherResults.push(expectationResult);
+              currentSpec.tempMatcherResults.push(expectationResult);
               if (jasmine.getEnv().additionalScreenShots) {
                 jasmine.getEnv().additionalScreenShots(e.stack, null, expectationResult, 'TempErr');
               }
@@ -171,8 +173,8 @@ function wrapInControlFlow(globalFn, fnName) {
             });
 
             return promiseIteration.then(function(retValue) {
-              if (jasmine.getEnv().currentSpec.tempMatcherResults.length >
-                  jasmine.getEnv().currentSpec.initialCountOfMatcherResults) {
+              if (currentSpec.tempMatcherResults.length >
+                  currentSpec.initialCountOfMatcherResults) {
                 return false;
               } else {
                 return retValue;
@@ -184,9 +186,14 @@ function wrapInControlFlow(globalFn, fnName) {
         } else {
           // Without retry
           flowFinished = flow.execute(function() {
-            fn.call(jasmine.getEnv().currentSpec, function(userError) {
+            fn.call(currentSpec, function(userError) {
               if (userError) {
-                asyncFnDone.reject(new Error(userError));
+                var err = new Error(userError);
+                if (currentSpec.lastErrorTrace &&
+                    currentSpec.lastErrorTrace.stack) {
+                  err.stack += currentSpec.lastErrorTrace.stack;
+                }
+                asyncFnDone.reject(err);
               } else {
                 asyncFnDone.fulfill();
               }
@@ -204,27 +211,42 @@ function wrapInControlFlow(globalFn, fnName) {
           // Take an additional screen shot to help debugging
           if (jasmine.getEnv().additionalScreenShots) {
             var matchTrace = new Error("FAILED-LAST");
-            var traceStr = matchTrace.stack.
-                              replace(/ +at.+jasminewd.+\n/g, '').
-                              replace(/ +at.+selenium-webdriver.+\n/g, '');
+            var traceStr = matchTrace.stack;
+            // var traceStr = matchTrace.stack.
+            //                   replace(/ +at.+jasminewd.+\n/g, '').
+            //                   replace(/ +at.+selenium-webdriver.+\n/g, '');
             jasmine.getEnv().additionalScreenShots(traceStr, null, null, 'FAILED-LAST');
           }
+          var tempMatcherResults = currentSpec.tempMatcherResults;
+          var taskTraceLine = '';
           if (fnName === 'rit' || fnName === 'rrit') {
+            taskTraceLine = '==== retry task ====\n';
+          } else {
+            taskTraceLine = '==== async task ====\n';
+          }
+          if (tempMatcherResults && tempMatcherResults.length > 0) {
             // Report only the last retry collected errors
-            var tempMatcherResults = jasmine.getEnv().currentSpec.tempMatcherResults;
-            for (var i = jasmine.getEnv().currentSpec.initialCountOfMatcherResults;
+            for (var i = currentSpec.initialCountOfMatcherResults;
                  i < tempMatcherResults.length; i++) {
               var expectationResult = tempMatcherResults[i];
-              jasmine.getEnv().currentSpec.addMatcherResult(expectationResult);
+              var msg = expectationResult.trace.message;
+              if (currentSpec.lastErrorTrace &&
+                  currentSpec.lastErrorTrace.stack) {
+                expectationResult.trace.stack += currentSpec.lastErrorTrace.stack;
+              }
+              expectationResult.trace.stack += taskTraceLine;
+              expectationResult.trace.stack += driverError.stack;
+              currentSpec.addMatcherResult(expectationResult);
             }
-            // No need to pollute the error results with the retry so skip done(e);
-            // e.stack = e.stack + '==== within retry task ====\n' + driverError.stack;
-            // done(e);
-          } else {
-            // Default it/iit behaviour
-            e.stack = e.stack + '==== async task ====\n' + driverError.stack;
-            done(e);
           }
+          e.stack += taskTraceLine;
+          // Include custom stack traces from Jasmine users
+          if (currentSpec.lastErrorTrace &&
+              currentSpec.lastErrorTrace.stack) {
+            e.stack += currentSpec.lastErrorTrace.stack;
+          }
+          e.stack += driverError.stack;
+          done(e);
         });
       };
     }
@@ -292,12 +314,12 @@ jasmine.getEnv().setDetailTestLevel = function(numLevel) {
     'numLevel must be a number but is: ' + numLevel);
 
   global.it('set detailTestLevel: ' + numLevel, function() {
-    jasmine.getEnv().originalSpecLevel = 
+    jasmine.getEnv().originalSpecLevel =
       jasmine.getEnv().detailTestLevel || 0;
     jasmine.getEnv().detailTestLevel = numLevel;
   });
 
-  jasmine.getEnv().originalSuiteLevel = 
+  jasmine.getEnv().originalSuiteLevel =
     jasmine.getEnv().detailTestLevel || 0;
   jasmine.getEnv().detailTestLevel = numLevel;
 };
@@ -328,7 +350,7 @@ global.jF = function(numLevel, opt_fn) {
     'numLevel is required and must be a number but is: ' + numLevel);
   if (opt_fn != null && typeof opt_fn !== 'function') throw new Error(
     'When opt_fn is set it must be a function but is: ' + opt_fn);
-  
+
   jasmine.getEnv().setDetailTestLevel(numLevel);
   if (opt_fn != null) {
     opt_fn();
@@ -350,7 +372,7 @@ global.ifjF = function(numLevel, fn) {
     'numLevel is required and must be a number but is: ' + numLevel);
   if (typeof fn !== 'function') throw new Error(
     'fn is required and must be a function but is: ' + fn);
-  
+
   if (jasmine.getEnv().detailTestLevel >= numLevel) {
     fn();
   }
@@ -367,7 +389,7 @@ function wrapMatcher(matcher, actualPromise, not) {
   return function() {
     var originalArgs = arguments;
     var matchError = new Error("Failed expectation");
-    matchError.stack = matchError.stack.replace(/ +at.+jasminewd.+\n/, '');
+    // matchError.stack = matchError.stack.replace(/ +at.+jasminewd.+\n/, '');
     var expected = originalArgs[0];
     actualPromise.then(function(actual) {
       var expectation = originalExpect(actual);
@@ -446,7 +468,7 @@ function wrapRetryMatcher(matcher, actualValue, not) {
   return function() {
     var originalArgs = arguments;
     var matchError = new Error("Failed expectation");
-    matchError.stack = matchError.stack.replace(/ +at.+jasminewd.+\n/, '');
+    // matchError.stack = matchError.stack.replace(/ +at.+jasminewd.+\n/, '');
     var expected = originalArgs[0];
 
     var expectation = originalExpect(actualValue);
@@ -549,9 +571,10 @@ global.expect = function(actual) {
   // Take additional screen shots here if the function is available
   if (jasmine.getEnv().additionalScreenShots) {
     var matchTrace = new Error("Expectation");
-    var traceStr = matchTrace.stack.
-                      replace(/ +at.+jasminewd.+\n/g, '').
-                      replace(/ +at.+selenium-webdriver.+\n/g, '');
+    var traceStr = matchTrace.stack;
+    // var traceStr = matchTrace.stack.
+    //                   replace(/ +at.+jasminewd.+\n/g, '').
+    //                   replace(/ +at.+selenium-webdriver.+\n/g, '');
     jasmine.getEnv().additionalScreenShots(traceStr, null, null, 'expect');
   }
 
@@ -582,7 +605,7 @@ jasmine.Matchers.matcherFn_ = function(matcherName, matcherFunction) {
           // matchError.stack = matchError.stack.replace(/ +at.+jasminewd.+\n/, '');
           originalAddMatcherResult = matcherThis.spec.addMatcherResult;
           matcherThis.spec.addMatcherResult = function(result) {
-            result.trace = matcherThis.spec.lastStackTrace || result.trace;
+            result.trace = matcherThis.spec.lastErrorTrace || result.trace;
             if (result.passed_ || jasmine.getEnv().currentSpec.currentWaitIteration == null) {
               originalAddMatcherResult.call(this, result);
             } else {
@@ -634,12 +657,14 @@ OnTimeoutReporter.prototype.reportSpecResults = function(spec) {
             /timed out after \d+ msec waiting for spec to complete/;
         if (failureItem.toString().match(jasmineTimeoutRegexp)) {
           if (!failureItem.trace.stack) {
-            if (spec.lastStackTrace) {
-              failureItem.trace = spec.lastStackTrace;
+            if (spec.lastErrorTrace) {
+              failureItem.trace = spec.lastErrorTrace;
             } else {
               // Stacktrace: undefined
               //  failureItem.trace = new Error('Timeout trace');
             }
+          } else if (spec.lastErrorTrace) {
+            failureItem.trace.stack += spec.lastErrorTrace.stack;
           }
           this.callback();
         }
@@ -659,7 +684,7 @@ jasmine.getEnv().addReporter(new OnTimeoutReporter(function() {
   console.warn('The last active task was: ');
   console.warn(
       (flow.activeFrame_  && flow.activeFrame_.getPendingTask() ?
-          flow.activeFrame_.getPendingTask().toString() : 
+          flow.activeFrame_.getPendingTask().toString() :
           'unknown'));
   flow.reset();
 }));
