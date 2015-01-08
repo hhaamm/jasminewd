@@ -131,10 +131,14 @@ function wrapInControlFlow(globalFn, fnName) {
                 if (jasmine.getEnv().additionalScreenShots) {
                   jasmine.getEnv().additionalScreenShots(e.stack, null, expectationResult, 'TempErr');
                 }
-                if (currentSpec.lastUncaughtException !== expectationResult.message) {
-                  console.log("\nWarning, uncaughtException: " + expectationResult.message);
-                  console.log(e.stack);
-                  currentSpec.lastUncaughtException = expectationResult.message;
+                if (jasmine.getEnv().lastUncaughtExceptionMsg !== expectationResult.message) {
+                  jasmine.getEnv().lastUncaughtExceptionMsg = expectationResult.message;
+                  console.warn("\nWarning, uncaughtException: " + expectationResult.message);
+                  var stackTrace = e.stack;
+                  if (typeof E2e === 'object' && E2e.filterStackTraceFn) {
+                    stackTrace = E2e.filterStackTraceFn(stackTrace);
+                  }
+                  console.warn(stackTrace);
                 }
                 promiseIteration.fulfill(false);
               });
@@ -680,11 +684,15 @@ OnTimeoutReporter.prototype.log = function() {};
 // to ensure that it runs after any afterEach() blocks with webdriver tasks
 // get to complete first.
 jasmine.getEnv().addReporter(new OnTimeoutReporter(function() {
-  console.warn(' A Jasmine spec timed out. Resetting the WebDriver Control Flow.');
+  console.warn('-A Jasmine spec timed out. Resetting the WebDriver Control Flow.-');
   console.warn('The last active task was: ');
-  console.warn(
-      (flow.activeFrame_  && flow.activeFrame_.getPendingTask() ?
-          flow.activeFrame_.getPendingTask().toString() :
-          'unknown'));
+  var stackTrace = 'unknown';
+  if ( flow.activeFrame_  && flow.activeFrame_.getPendingTask() ) {
+    stackTrace = flow.activeFrame_.getPendingTask().toString();
+    if (typeof E2e === 'object' && E2e.filterStackTraceFn) {
+      stackTrace = E2e.filterStackTraceFn(stackTrace);
+    }
+  }
+  console.warn(stackTrace);
   flow.reset();
 }));
