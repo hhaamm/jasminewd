@@ -258,7 +258,7 @@ describe('webdriverJS Jasmine adapter', function() {
       });
     });
 
-    jasmine.getEnv().setDetailTestLevel(1);
+    jasmine.setDetailTestLevel(1);
 
     it('should execute and pass given the set detailTestLevel is <= current', function() {
       expect(5).not.toEqual(8);

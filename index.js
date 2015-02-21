@@ -208,17 +208,17 @@ function wrapInControlFlow(globalFn, fnName) {
         webdriver.promise.all([asyncFnDone, flowFinished]).then(function() {
           seal(done)();
         }, function(e) {
-          // Fail fast
-          jasmine.getEnv().specFilter = function(spec) {
+          // Fail fast functionality
+          if (jasmine.getEnv().failFast) {
+            // Quit after first failure
+            jasmine.getEnv().specFilter = function(spec) {
               return false;
-          };
+            };
+          }
           // Take an additional screen shot to help debugging
           if (jasmine.getEnv().additionalScreenShots) {
             var matchTrace = new Error("FAILED-LAST");
             var traceStr = matchTrace.stack;
-            // var traceStr = matchTrace.stack.
-            //                   replace(/ +at.+jasminewd.+\n/g, '').
-            //                   replace(/ +at.+selenium-webdriver.+\n/g, '');
             jasmine.getEnv().additionalScreenShots(traceStr, null, null, 'FAILED-LAST');
           }
           var tempMatcherResults = currentSpec.tempMatcherResults;
@@ -313,7 +313,7 @@ jasmine.getEnv().detailTestLevel = 0;
  * Set deep testing level for upcoming tests. Used to control fast/slow testing
  * @param  {Number} numLevel Deep testing level, default: 0 (fast)
  */
-jasmine.getEnv().setDetailTestLevel = function(numLevel) {
+jasmine.setDetailTestLevel = function(numLevel) {
   if (typeof numLevel !== 'number') throw new Error(
     'numLevel must be a number but is: ' + numLevel);
 
@@ -331,7 +331,7 @@ jasmine.getEnv().setDetailTestLevel = function(numLevel) {
 /**
  * Restore deep testing level. Used to restore fast/slow testing speed.
  */
-jasmine.getEnv().restoreDetailTestLevel = function() {
+jasmine.restoreDetailTestLevel = function() {
   global.it('restore detailTestLevel', function() {
     jasmine.getEnv().detailTestLevel = jasmine.getEnv().originalSpecLevel;
   });
@@ -355,11 +355,11 @@ global.jF = function(numLevel, opt_fn) {
   if (opt_fn != null && typeof opt_fn !== 'function') throw new Error(
     'When opt_fn is set it must be a function but is: ' + opt_fn);
 
-  jasmine.getEnv().setDetailTestLevel(numLevel);
+  jasmine.setDetailTestLevel(numLevel);
   if (opt_fn != null) {
     opt_fn();
   }
-  jasmine.getEnv().restoreDetailTestLevel();
+  jasmine.restoreDetailTestLevel();
 };
 
 /**
@@ -576,9 +576,6 @@ global.expect = function(actual) {
   if (jasmine.getEnv().additionalScreenShots) {
     var matchTrace = new Error("Expectation");
     var traceStr = matchTrace.stack;
-    // var traceStr = matchTrace.stack.
-    //                   replace(/ +at.+jasminewd.+\n/g, '').
-    //                   replace(/ +at.+selenium-webdriver.+\n/g, '');
     jasmine.getEnv().additionalScreenShots(traceStr, null, null, 'expect');
   }
 
