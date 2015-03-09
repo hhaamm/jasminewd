@@ -205,7 +205,8 @@ function wrapInControlFlow(globalFn, fnName) {
           }, desc_);
         }
 
-        webdriver.promise.all([asyncFnDone, flowFinished]).then(function() {
+        // We should save this promises here because if not Protractor won't know about our promises
+        var hangingPromises = webdriver.promise.all([asyncFnDone, flowFinished]).then(function() {
           seal(done)();
         }, function(e) {
           // Fail fast
@@ -252,6 +253,7 @@ function wrapInControlFlow(globalFn, fnName) {
           e.stack += driverError.stack;
           done(e);
         });
+        flow.await(hangingPromises);
       };
     }
 
